@@ -36,6 +36,8 @@ if __name__ == '__main__':
     print(f"f1:{f1_score(y_test,y_pred)}")
     print(f"acc: {accuracy_score(y_test,y_pred)}")
 
+    #testing
+
 
 
 
