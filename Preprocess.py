@@ -1,17 +1,15 @@
-import random
-
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import LabelEncoder
-from sklearn.metrics import accuracy_score
 import joblib
 from sklearn.model_selection import train_test_split
 import os
-from sklearn import preprocessing
+import matplotlib.pyplot as plt
 #from Comparison_Detection import RANDOM_SEED
 from scipy.stats import zscore
 import seaborn as sb
 import matplotlib.pyplot as mp
+
 
 
 
@@ -20,6 +18,34 @@ TARGET = 'attack_flag'
 n_adv = 5
 THRESHOLD = 0.5
 
+def target_bins(attack):
+    #categorize the attacks
+
+    dos_attacks = ['apache2', 'back', 'land', 'neptune', 'mailbomb', 'pod', 'processtable', 'smurf', 'teardrop',
+                   'udpstorm', 'worm']
+    probe_attacks = ['ipsweep', 'mscan', 'nmap', 'portsweep', 'saint', 'satan']
+    privilege_attacks = ['buffer_overflow', 'loadmdoule', 'perl', 'ps', 'rootkit', 'sqlattack', 'xterm']
+    access_attacks = ['ftp_write', 'guess_passwd', 'http_tunnel', 'imap', 'multihop', 'named', 'phf', 'sendmail',
+                      'snmpgetattack', 'snmpguess', 'spy', 'warezclient', 'warezmaster', 'xclock', 'xsnoop']
+
+
+    if attack in dos_attacks:
+        # dos_attacks map to 1
+        attack_type = 1
+    elif attack in probe_attacks:
+        # probe_attacks mapt to 2
+        attack_type = 2
+    elif attack in privilege_attacks:
+        # privilege escalation attacks map to 3
+        attack_type = 3
+    elif attack in access_attacks:
+        # remote access attacks map to 4
+        attack_type = 4
+    else:
+        # normal maps to 0
+        attack_type = 0
+
+    return attack_type
 
 def read_and_preprocess_kdd():
     file_path_20_percent = 'data/KDDTrain+_20Percent.txt'
@@ -78,18 +104,13 @@ def read_and_preprocess_kdd():
         df.columns = columns
         test_df.columns = columns
 
-        is_attack = df.attack.map(lambda a: 0 if a == 'normal' else 1)
-        test_attack = test_df.attack.map(lambda a: 0 if a == 'normal' else 1)
+        is_attack = df.attack.apply(target_bins)
+
+        test_attack = test_df.attack.apply(target_bins)
 
         # data_with_attack = df.join(is_attack, rsuffix='_flag')
         df['attack_flag'] = is_attack
         test_df['attack_flag'] = test_attack
-
-        # sanity check
-        # df.head()
-
-
-        # print(df.shape)
 
         # print(df.info(verbose=True))
         print_class_freq(df)
@@ -97,15 +118,15 @@ def read_and_preprocess_kdd():
         print(df.info())
 
 
-        le = preprocessing.LabelEncoder()
+        le = LabelEncoder()
         le.fit(df['protocol_type'])
         df['protocol_type'] = le.transform(df['protocol_type'])
 
-        le = preprocessing.LabelEncoder()
+        le = LabelEncoder()
         le.fit(df['service'])
         df['service'] = le.transform(df['service'])
 
-        le = preprocessing.LabelEncoder()
+        le = LabelEncoder()
         le.fit(df['flag'])
         df['flag'] = le.transform(df['flag'])
 
@@ -137,7 +158,7 @@ def read_and_preprocess_kdd():
         # test_set = test_final.join(test_df[numeric_features])
         to_fit = df
         to_fit['attack_flag'] = df['attack_flag']
-        print(to_fit.head())
+        print(to_fit.head(10))
 
 
 
@@ -195,13 +216,23 @@ def read_and_preprocess_kdd():
         to_fit = to_fit.drop("Unnamed: 0", axis=1)
 
         to_fit = to_fit.astype('float32')
+        print_class_freq(to_fit)
+        plt.plot.hist(to_fit[TARGET],alpha=1,bins=5)
+        plt.show()
     return to_fit
 
 def print_class_freq(df):
-    print("Class 1 frequency: ")
-    print(df[df[TARGET] == 1].shape[0])
     print("Class 0 frequency: ")
     print(df[df[TARGET] == 0].shape[0])
+    print("Class 1 frequency: ")
+    print(df[df[TARGET] == 1].shape[0])
+    print("Class 2 frequency: ")
+    print(df[df[TARGET] == 2].shape[0])
+    print("Class 3 frequency: ")
+    print(df[df[TARGET] == 3].shape[0])
+    print("Class 4 frequency: ")
+    print(df[df[TARGET] == 4].shape[0])
+
 
 def balanced_train_data(df_train):
     """
