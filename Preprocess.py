@@ -217,7 +217,7 @@ def read_and_preprocess_kdd():
 
         to_fit = to_fit.astype('float32')
         print_class_freq(to_fit)
-        plt.plot.hist(to_fit[TARGET],alpha=1,bins=5)
+        plt.hist(to_fit[TARGET],alpha=1,bins=[0,1,2,3,4,5],ec='black')
         plt.show()
     return to_fit
 
@@ -265,15 +265,15 @@ def load_kdd_data():
     df = read_and_preprocess_kdd()
     # ################## Validation Strategy - 80/20 ##################
     # balanced_df = balanced_train_data(df)
-    df_train, df_val, df_test, df_attack = train_test_attack_split(df, n_adv)
-    y_train = df_train[TARGET]
-    y_attack = df_attack[TARGET]
-    y_val = df_val[TARGET]
-    y_test = df_test[TARGET]
-    # remove y and unnecessary columns
-    x_train, x_val, x_attack, x_test = [x.drop([TARGET], axis=1) for x in [df_train, df_val, df_attack, df_test]]
-    print("x_train.shape: ",x_train.shape)
-    print("x_test.shape: ",x_test.shape)
-    return x_train, x_val, x_attack, x_test, y_train, y_attack, y_val, y_test
-
+    # df_train, df_val, df_test, df_attack = train_test_attack_split(df, n_adv)
+    # y_train = df_train[TARGET]
+    # y_attack = df_attack[TARGET]
+    # y_val = df_val[TARGET]
+    # y_test = df_test[TARGET]
+    # # remove y and unnecessary columns
+    # x_train, x_val, x_attack, x_test = [x.drop([TARGET], axis=1) for x in [df_train, df_val, df_attack, df_test]]
+    # print("x_train.shape: ",x_train.shape)
+    # print("x_test.shape: ",x_test.shape)
+    return df
+        #x_train, x_val, x_attack, x_test, y_train, y_attack, y_val, y_test
 
