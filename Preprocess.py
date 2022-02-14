@@ -47,7 +47,7 @@ def target_bins(attack):
 
 def read_and_preprocess_kdd():
     file_path_20_percent = 'data/KDDTrain+_20Percent.txt'
-    # file_path_full_training_set = 'data/KDDTrain+.txt'
+    file_path_full_training_set = 'data/KDDTrain+.txt'
     file_path_test = 'data/KDDTest+.txt'
 
     if (os.path.isfile("data/kdd_after_preprocess_test.csv") == False):
@@ -127,9 +127,9 @@ def read_and_preprocess_kdd():
         le.fit(df['flag'])
         df['flag'] = le.transform(df['flag'])
 
-        le = LabelEncoder()
-        le.fit(df['attack'])
-        df['attack'] = le.transform(df['attack'])
+        # le = LabelEncoder()
+        # le.fit(df['attack'])
+        # df['attack'] = le.transform(df['attack'])
 
         # get the intial set of encoded features and encode them
         # features_to_encode = ['protocol_type', 'service', 'flag']
@@ -181,7 +181,7 @@ def read_and_preprocess_kdd():
         # to_fit = pd.DataFrame(scaled_df, columns=to_fit.columns)
         ##TODO:HIT MAP- corollation
         # test:
-        # del to_fit["attack"]
+        del to_fit["attack"]
         # del to_fit['urgent']
         # del to_fit['land']
         # del to_fit['num_file_creations']
