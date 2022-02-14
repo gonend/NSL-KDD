@@ -254,7 +254,6 @@ def train_test_attack_split(df):
 
     return df_train, df_val, df_test
 
-
 def calculating_class_weights(y_true):
     from sklearn.utils.class_weight import compute_class_weight
     # number_dim = np.shape(y_true)[1]
@@ -266,14 +265,15 @@ def calculating_class_weights(y_true):
 
 def load_kdd_data():
     df = read_and_preprocess_kdd()
-    # ################## Validation Strategy - 80/20 ##################
-    # balanced_df = balanced_train_data(df)
-    df_train, df_val, df_test = train_test_attack_split(df)
-    y_train = df_train[TARGET]
-    y_val = df_val[TARGET]
-    y_test = df_test[TARGET]
-    # remove y and unnecessary columns
-    x_train, x_val, x_test = [x.drop([TARGET], axis=1) for x in [df_train, df_val, df_test]]
-    print("x_train.shape: ", x_train.shape)
-    print("x_test.shape: ", x_test.shape)
-    return x_train, x_val, x_test, y_train, y_val, y_test
+    # # ################## Validation Strategy - 80/20 ##################
+    # # balanced_df = balanced_train_data(df)
+    # df_train, df_val, df_test = train_test_attack_split(df)
+    # y_train = df_train[TARGET]
+    # y_val = df_val[TARGET]
+    # y_test = df_test[TARGET]
+    # # remove y and unnecessary columns
+    # x_train, x_val, x_test = [x.drop([TARGET], axis=1) for x in [df_train, df_val, df_test]]
+    # print("x_train.shape: ", x_train.shape)
+    # print("x_test.shape: ", x_test.shape)
+    # return x_train, x_val, x_test, y_train, y_val, y_test
+    return df
