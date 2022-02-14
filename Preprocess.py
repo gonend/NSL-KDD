@@ -1,25 +1,23 @@
 import pandas as pd
-import numpy as np
+# import numpy as np
 from sklearn.preprocessing import LabelEncoder
-import joblib
+# import joblib
 from sklearn.model_selection import train_test_split
 import os
 import matplotlib.pyplot as plt
-#from Comparison_Detection import RANDOM_SEED
-from scipy.stats import zscore
-import seaborn as sb
-import matplotlib.pyplot as mp
-
-
-
+# from Comparison_Detection import RANDOM_SEED
+# from scipy.stats import zscore
+# import seaborn as sb
+# import matplotlib.pyplot as mp
 
 TARGET = 'attack_flag'
 
 n_adv = 5
 THRESHOLD = 0.5
 
+
 def target_bins(attack):
-    #categorize the attacks
+    # categorize the attacks
 
     dos_attacks = ['apache2', 'back', 'land', 'neptune', 'mailbomb', 'pod', 'processtable', 'smurf', 'teardrop',
                    'udpstorm', 'worm']
@@ -27,7 +25,6 @@ def target_bins(attack):
     privilege_attacks = ['buffer_overflow', 'loadmdoule', 'perl', 'ps', 'rootkit', 'sqlattack', 'xterm']
     access_attacks = ['ftp_write', 'guess_passwd', 'http_tunnel', 'imap', 'multihop', 'named', 'phf', 'sendmail',
                       'snmpgetattack', 'snmpguess', 'spy', 'warezclient', 'warezmaster', 'xclock', 'xsnoop']
-
 
     if attack in dos_attacks:
         # dos_attacks map to 1
@@ -47,9 +44,10 @@ def target_bins(attack):
 
     return attack_type
 
+
 def read_and_preprocess_kdd():
     file_path_20_percent = 'data/KDDTrain+_20Percent.txt'
-    #file_path_full_training_set = 'data/KDDTrain+.txt'
+    # file_path_full_training_set = 'data/KDDTrain+.txt'
     file_path_test = 'data/KDDTest+.txt'
 
     if (os.path.isfile("data/kdd_after_preprocess_test.csv") == False):
@@ -117,7 +115,6 @@ def read_and_preprocess_kdd():
 
         print(df.info())
 
-
         le = LabelEncoder()
         le.fit(df['protocol_type'])
         df['protocol_type'] = le.transform(df['protocol_type'])
@@ -129,6 +126,10 @@ def read_and_preprocess_kdd():
         le = LabelEncoder()
         le.fit(df['flag'])
         df['flag'] = le.transform(df['flag'])
+
+        le = LabelEncoder()
+        le.fit(df['attack'])
+        df['attack'] = le.transform(df['attack'])
 
         # get the intial set of encoded features and encode them
         # features_to_encode = ['protocol_type', 'service', 'flag']
@@ -160,9 +161,6 @@ def read_and_preprocess_kdd():
         to_fit['attack_flag'] = df['attack_flag']
         print(to_fit.head(10))
 
-
-
-
         # before test:
         # del to_fit['urgent']
         # del to_fit['land']
@@ -183,25 +181,24 @@ def read_and_preprocess_kdd():
         # to_fit = pd.DataFrame(scaled_df, columns=to_fit.columns)
         ##TODO:HIT MAP- corollation
         # test:
-        del to_fit["attack"]
-        del to_fit['urgent']
-        del to_fit['land']
-        del to_fit['num_file_creations']
-        del to_fit['num_shells']
-        del to_fit['num_access_files']
-        del to_fit['level']
-        del to_fit['duration']
-        del to_fit['num_compromised']
-        del to_fit['srv_rerror_rate']
-        del to_fit['wrong_fragment']
-        del to_fit['num_root']
-        del to_fit['is_guest_login']
-        del to_fit['is_host_login']
-        del to_fit['su_attempted']
-        del to_fit['root_shell']
-        del to_fit['num_failed_logins']
-        del to_fit['num_outbound_cmds']
-
+        # del to_fit["attack"]
+        # del to_fit['urgent']
+        # del to_fit['land']
+        # del to_fit['num_file_creations']
+        # del to_fit['num_shells']
+        # del to_fit['num_access_files']
+        # del to_fit['level']
+        # del to_fit['duration']
+        # del to_fit['num_compromised']
+        # del to_fit['srv_rerror_rate']
+        # del to_fit['wrong_fragment']
+        # del to_fit['num_root']
+        # del to_fit['is_guest_login']
+        # del to_fit['is_host_login']
+        # del to_fit['su_attempted']
+        # del to_fit['root_shell']
+        # del to_fit['num_failed_logins']
+        # del to_fit['num_outbound_cmds']
 
         to_fit = to_fit.astype('float32')
         print(to_fit.info())
@@ -217,9 +214,10 @@ def read_and_preprocess_kdd():
 
         to_fit = to_fit.astype('float32')
         print_class_freq(to_fit)
-        plt.plot.hist(to_fit[TARGET],alpha=1,bins=5)
+        plt.hist(to_fit[TARGET], alpha=1, bins=[0, 1, 2, 3, 4, 5], ec='black')
         plt.show()
     return to_fit
+
 
 def print_class_freq(df):
     print("Class 0 frequency: ")
@@ -240,40 +238,42 @@ def balanced_train_data(df_train):
     """
     hate_train_df = df_train[df_train.pred == 1]
     print("hate_train_df shape:", hate_train_df.shape)
-    df2 = df_train[df_train[TARGET] == 0].sample(len(hate_train_df)*5, axis=0, random_state=2)
-    df_train = pd.concat([hate_train_df, df2],  axis=0, sort=False)
+    df2 = df_train[df_train[TARGET] == 0].sample(len(hate_train_df) * 5, axis=0, random_state=2)
+    df_train = pd.concat([hate_train_df, df2], axis=0, sort=False)
     print("df shape: ", df_train.shape)
     return df_train
 
-def train_test_attack_split(df, num_of_adv):
 
-    df_train, df_val= train_test_split(df, test_size=0.2, random_state=2)
-    df_val, df_test= train_test_split(df_val, test_size=0.5, random_state=2)
+def train_test_attack_split(df):
+    df_train, df_val = train_test_split(df, test_size=0.2, random_state=2)
+    df_val, df_test = train_test_split(df_val, test_size=0.5, random_state=2)
+
+    # df_attack = df_train.sample(n=num_of_adv, random_state=2)
+    # df_train = df_train.drop(df_attack.index)
+    # df_attack = pd.concat([df_attack, df_test])
+
+    return df_train, df_val, df_test
 
 
-
-    df_attack = df_train.sample(n=num_of_adv, random_state=2)
-    df_train = df_train.drop(df_attack.index)
-    df_attack = pd.concat([df_attack, df_test])
-
-
-    return df_train, df_val, df_test, df_attack
+def calculating_class_weights(y_true):
+    from sklearn.utils.class_weight import compute_class_weight
+    # number_dim = np.shape(y_true)[1]
+    # weights = np.empty([number_dim, 2])
+    weights = compute_class_weight(class_weight='balanced', classes=[0., 1., 2., 3., 4.], y=y_true)
+    # weights =  dict(zip(np.unique(train_classes), class_weights))
+    return weights
 
 
 def load_kdd_data():
-
     df = read_and_preprocess_kdd()
     # ################## Validation Strategy - 80/20 ##################
     # balanced_df = balanced_train_data(df)
-    df_train, df_val, df_test, df_attack = train_test_attack_split(df, n_adv)
+    df_train, df_val, df_test = train_test_attack_split(df)
     y_train = df_train[TARGET]
-    y_attack = df_attack[TARGET]
     y_val = df_val[TARGET]
     y_test = df_test[TARGET]
     # remove y and unnecessary columns
-    x_train, x_val, x_attack, x_test = [x.drop([TARGET], axis=1) for x in [df_train, df_val, df_attack, df_test]]
-    print("x_train.shape: ",x_train.shape)
-    print("x_test.shape: ",x_test.shape)
-    return x_train, x_val, x_attack, x_test, y_train, y_attack, y_val, y_test
-
-
+    x_train, x_val, x_test = [x.drop([TARGET], axis=1) for x in [df_train, df_val, df_test]]
+    print("x_train.shape: ", x_train.shape)
+    print("x_test.shape: ", x_test.shape)
+    return x_train, x_val, x_test, y_train, y_val, y_test
