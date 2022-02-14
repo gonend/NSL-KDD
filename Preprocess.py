@@ -46,12 +46,12 @@ def target_bins(attack):
 
 
 def read_and_preprocess_kdd():
-    file_path_20_percent = 'data/KDDTrain+_20Percent.txt'
+    #file_path_20_percent = 'data/KDDTrain+_20Percent.txt'
     file_path_full_training_set = 'data/KDDTrain+.txt'
     file_path_test = 'data/KDDTest+.txt'
 
     if (os.path.isfile("data/kdd_after_preprocess_test.csv") == False):
-        df = pd.read_csv(file_path_20_percent)
+        df = pd.read_csv(file_path_full_training_set)
         # df = pd.read_csv(file_path_full_training_set)
         test_df = pd.read_csv(file_path_test)
 
@@ -112,20 +112,18 @@ def read_and_preprocess_kdd():
 
         # print(df.info(verbose=True))
         print_class_freq(df)
+        print_class_freq(test_df)
 
         print(df.info())
 
+        ## encode train_data
         le = LabelEncoder()
-        le.fit(df['protocol_type'])
-        df['protocol_type'] = le.transform(df['protocol_type'])
-
-        le = LabelEncoder()
-        le.fit(df['service'])
-        df['service'] = le.transform(df['service'])
-
-        le = LabelEncoder()
-        le.fit(df['flag'])
-        df['flag'] = le.transform(df['flag'])
+        df['protocol_type'] = le.fit_transform(df['protocol_type'])
+        test_df['protocol_type'] = le.transform(test_df['protocol_type'])
+        df['service'] = le.fit_transform(df['service'])
+        test_df['service'] = le.transform(test_df['service'])
+        df['flag'] = le.fit_transform(df['flag'])
+        test_df['flag'] = le.transform(test_df['flag'])
 
         # le = LabelEncoder()
         # le.fit(df['attack'])
@@ -157,31 +155,11 @@ def read_and_preprocess_kdd():
         # # model to fit/test
         # to_fit = encoded.join(df[numeric_features])
         # test_set = test_final.join(test_df[numeric_features])
-        to_fit = df
-        to_fit['attack_flag'] = df['attack_flag']
-        print(to_fit.head(10))
 
-        # before test:
-        # del to_fit['urgent']
-        # del to_fit['land']
-        # del to_fit['num_file_creations']
-        # del to_fit['num_shells']
-        # del to_fit['num_access_files']
-        # del to_fit['num_outbound_cmds']
-        # del to_fit["attack"]
+        # delete data leakage
+        del df["attack"]
+        del test_df["attack"]
 
-        """testtt"""
-        # y = to_fit["attack_flag"]
-        # del to_fit["attack_flag"]
-        # to_fit = to_fit.apply(zscore)
-        # to_fit["attack_flag"] = y
-
-        # scaler = preprocessing.MinMaxScaler()
-        # scaled_df = scaler.fit_transform(to_fit)
-        # to_fit = pd.DataFrame(scaled_df, columns=to_fit.columns)
-        ##TODO:HIT MAP- corollation
-        # test:
-        del to_fit["attack"]
         # del to_fit['urgent']
         # del to_fit['land']
         # del to_fit['num_file_creations']
@@ -200,23 +178,33 @@ def read_and_preprocess_kdd():
         # del to_fit['num_failed_logins']
         # del to_fit['num_outbound_cmds']
 
-        to_fit = to_fit.astype('float32')
-        print(to_fit.info())
+        df = df.astype('float32')
+        test_df = test_df.astype('float32')
 
         # least important features
         # del to_fit["service_login"]
         # del to_fit['service_nnsp']
 
-        to_fit.to_csv("data/kdd_after_preprocess_test.csv")
+        df.to_csv("data/kdd_after_preprocess_train.csv")
+        test_df.to_csv("data/kdd_after_preprocess_test.csv")
     else:
-        to_fit = pd.read_csv("data/kdd_after_preprocess_test.csv")
-        to_fit = to_fit.drop("Unnamed: 0", axis=1)
+        df = pd.read_csv("data/kdd_after_preprocess_train.csv")
+        df = df.drop("Unnamed: 0", axis=1)
 
-        to_fit = to_fit.astype('float32')
-        print_class_freq(to_fit)
-        plt.hist(to_fit[TARGET], alpha=1, bins=[0, 1, 2, 3, 4, 5], ec='black')
+        test_df = pd.read_csv("data/kdd_after_preprocess_test.csv")
+        test_df = test_df.drop("Unnamed: 0", axis=1)
+
+
+        df = df.astype('float32')
+        test_df = test_df.astype(('float32'))
+
+        print_class_freq(df)
+        print_class_freq(test_df)
+
+        plt.hist(df[TARGET], alpha=1, bins=[0, 1, 2, 3, 4, 5], ec='black')
+        plt.hist(df[TARGET], alpha=1, bins=[0, 1, 2, 3, 4, 5], ec='black')
         plt.show()
-    return to_fit
+    return df, test_df
 
 
 def print_class_freq(df):
@@ -244,15 +232,6 @@ def balanced_train_data(df_train):
     return df_train
 
 
-def train_test_attack_split(df):
-    df_train, df_val = train_test_split(df, test_size=0.2, random_state=2)
-    df_val, df_test = train_test_split(df_val, test_size=0.5, random_state=2)
-
-    # df_attack = df_train.sample(n=num_of_adv, random_state=2)
-    # df_train = df_train.drop(df_attack.index)
-    # df_attack = pd.concat([df_attack, df_test])
-
-    return df_train, df_val, df_test
 
 def calculating_class_weights(y_true):
     from sklearn.utils.class_weight import compute_class_weight
@@ -262,18 +241,37 @@ def calculating_class_weights(y_true):
     # weights =  dict(zip(np.unique(train_classes), class_weights))
     return weights
 
+"""taken from NSL-KDD Exploration // kaggle"""
+def bake_pies(data_list, labels):
+    list_length = len(data_list)
 
-def load_kdd_data():
-    df = read_and_preprocess_kdd()
-    # # ################## Validation Strategy - 80/20 ##################
-    # # balanced_df = balanced_train_data(df)
-    # df_train, df_val, df_test = train_test_attack_split(df)
-    # y_train = df_train[TARGET]
-    # y_val = df_val[TARGET]
-    # y_test = df_test[TARGET]
-    # # remove y and unnecessary columns
-    # x_train, x_val, x_test = [x.drop([TARGET], axis=1) for x in [df_train, df_val, df_test]]
-    # print("x_train.shape: ", x_train.shape)
-    # print("x_test.shape: ", x_test.shape)
-    # return x_train, x_val, x_test, y_train, y_val, y_test
-    return df
+    # setup for mapping colors
+    color_list = sns.color_palette()
+    color_cycle = itertools.cycle(color_list)
+    cdict = {}
+
+    # build the subplots
+    fig, axs = plt.subplots(1, list_length, figsize=(18, 10), tight_layout=False)
+    plt.subplots_adjust(wspace=1 / list_length)
+
+    # loop through the data sets and build the charts
+    for count, data_set in enumerate(data_list):
+
+        # update our color mapt with new values
+        for num, value in enumerate(np.unique(data_set.index)):
+            if value not in cdict:
+                cdict[value] = next(color_cycle)
+
+        # build the wedges
+        wedges, texts = axs[count].pie(data_set,
+                                       colors=[cdict[v] for v in data_set.index])
+
+        # build the legend
+        axs[count].legend(wedges, data_set.index,
+                          title="Flags",
+                          loc="center left",
+                          bbox_to_anchor=(1, 0, 0.5, 1))
+        # set the title
+        axs[count].set_title(labels[count])
+
+    return axs
