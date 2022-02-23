@@ -1,6 +1,8 @@
 import pandas as pd
-# import numpy as np
+import numpy as np
 from sklearn.preprocessing import LabelEncoder
+import seaborn as sns
+import itertools
 # import joblib
 from sklearn.model_selection import train_test_split
 import os
@@ -8,14 +10,20 @@ import matplotlib.pyplot as plt
 # from Comparison_Detection import RANDOM_SEED
 # from scipy.stats import zscore
 # import seaborn as sb
-# import matplotlib.pyplot as mp
 
 TARGET = 'attack_flag'
 
 n_adv = 5
 THRESHOLD = 0.5
 
-
+"""
+discretizes the target class into 5.
+0: normal (no attack)
+1: ddos\dos attack
+2: probebility attack
+3: privilege attack
+4: access attack
+"""
 def target_bins(attack):
     # categorize the attacks
 
@@ -45,7 +53,7 @@ def target_bins(attack):
     return attack_type
 
 
-def read_and_preprocess_kdd():
+def read_and_preprocess_kdd(plots:bool=False):
     #file_path_20_percent = 'data/KDDTrain+_20Percent.txt'
     file_path_full_training_set = 'data/KDDTrain+.txt'
     file_path_test = 'data/KDDTest+.txt'
@@ -102,6 +110,7 @@ def read_and_preprocess_kdd():
         df.columns = columns
         test_df.columns = columns
 
+        # set target variabels into new classes
         is_attack = df.attack.apply(target_bins)
 
         test_attack = test_df.attack.apply(target_bins)
@@ -111,10 +120,6 @@ def read_and_preprocess_kdd():
         test_df['attack_flag'] = test_attack
 
         # print(df.info(verbose=True))
-        print_class_freq(df)
-        print_class_freq(test_df)
-
-        print(df.info())
 
         ## encode train_data
         le = LabelEncoder()
@@ -160,77 +165,11 @@ def read_and_preprocess_kdd():
         del df["attack"]
         del test_df["attack"]
 
-        del df['duration']
-        del test_df['duration']
-        del df['land']
-        del test_df['land']
-        del df['wrong_fragment']
-        del test_df['wrong_fragment']
-        del df['urgent']
-        del test_df['urgent']
-        del df['hot']
-        del test_df['hot']
-        del df['num_failed_logins']
-        del test_df['num_failed_logins']
-        del df['num_compromised']
-        del test_df['num_compromised']
-        del df['root_shell']
-        del test_df['root_shell']
-        del df['su_attempted']
-        del test_df['su_attempted']
-        del df['num_root']
-        del test_df['num_root']
-        del df['num_file_creations']
-        del test_df['num_file_creations']
-        del df['num_shells']
-        del test_df['num_shells']
-        del df['num_access_files']
-        del test_df['num_access_files']
-        del df['num_outbound_cmds']
-        del test_df['num_outbound_cmds']
-        del df['is_host_login']
-        del test_df['is_host_login']
-        del df['is_guest_login']
-        del test_df['is_guest_login']
-        del df['srv_count']
-        del test_df['srv_count']
-        del df['srv_serror_rate']
-        del test_df['srv_serror_rate']
-        del df['srv_diff_host_rate']
-        del test_df['srv_diff_host_rate']
-        del df['dst_host_count']
-        del test_df['dst_host_count']
-        del df['dst_host_srv_serror_rate']
-        del test_df['dst_host_srv_serror_rate']
-        del df['dst_host_rerror_rate']
-        del test_df['dst_host_rerror_rate']
-        # del df['attack']
-        # del test_df['attack']
-
-        # del to_fit['urgent']
-        # del to_fit['land']
-        # del to_fit['num_file_creations']
-        # del to_fit['num_shells']
-        # del to_fit['num_access_files']
-        # del to_fit['level']
-        # del to_fit['duration']
-        # del to_fit['num_compromised']
-        # del to_fit['srv_rerror_rate']
-        # del to_fit['wrong_fragment']
-        # del to_fit['num_root']
-        # del to_fit['is_guest_login']
-        # del to_fit['is_host_login']
-        # del to_fit['su_attempted']
-        # del to_fit['root_shell']
-        # del to_fit['num_failed_logins']
-        # del to_fit['num_outbound_cmds']
 
         df = df.astype('float32')
         test_df = test_df.astype('float32')
 
-        # least important features
-        # del to_fit["service_login"]
-        # del to_fit['service_nnsp']
+        print(df.info())
 
         df.to_csv("data/kdd_after_preprocess_train.csv")
         test_df.to_csv("data/kdd_after_preprocess_test.csv")
@@ -244,27 +183,20 @@ def read_and_preprocess_kdd():
 
         df = df.astype('float32')
         test_df = test_df.astype(('float32'))
-
-        print_class_freq(df)
-        print_class_freq(test_df)
-
-        plt.hist(df[TARGET], alpha=1, bins=[0, 1, 2, 3, 4, 5], ec='black')
-        plt.hist(df[TARGET], alpha=1, bins=[0, 1, 2, 3, 4, 5], ec='black')
-        plt.show()
+        # print feature distribution and if it greater then 0.95
+        for col in df.columns:
+            to_del = imbalnce_features(df, col)
+            if to_del:
+                del df[col]
+            feature_plot(df, col)
+            feature_plot(test_df,TARGET)
     return df, test_df
 
 
 def print_class_freq(df):
-    print("Class 0 frequency: ")
-    print(df[df[TARGET] == 0].shape[0])
-    print("Class 1 frequency: ")
-    print(df[df[TARGET] == 1].shape[0])
-    print("Class 2 frequency: ")
-    print(df[df[TARGET] == 2].shape[0])
-    print("Class 3 frequency: ")
-    print(df[df[TARGET] == 3].shape[0])
-    print("Class 4 frequency: ")
-    print(df[df[TARGET] == 4].shape[0])
+    for i in range(0,5):
+        print(f"Class {i} frequency: ")
+        print(df[df[TARGET] == i].shape[0])
 
 
 def balanced_train_data(df_train):
@@ -288,37 +220,23 @@ def calculating_class_weights(y_true):
     # weights =  dict(zip(np.unique(train_classes), class_weights))
     return weights
 
-"""taken from NSL-KDD Exploration // kaggle"""
-def bake_pies(data_list, labels):
-    list_length = len(data_list)
+def feature_plot(df,feature):
+    fig, ax = plt.subplots(figsize=(16, 10))
+    ax.hist(df[feature], density=False, bins=[0, 1, 2, 3, 4, 5], ec='black')
+    ax.set_title(f'Test Target Distribution')
+    for rect in ax.patches:
+        height = rect.get_height()
+        ax.annotate(f'{int(height)}', xy=(rect.get_x() + rect.get_width() / 2, height),
+                    xytext=(0, 5), textcoords='offset points', ha='center', va='bottom')
 
-    # setup for mapping colors
-    color_list = sns.color_palette()
-    color_cycle = itertools.cycle(color_list)
-    cdict = {}
+    plt.show()
+    fig.savefig(f'plots/{feature}.png')
 
-    # build the subplots
-    fig, axs = plt.subplots(1, list_length, figsize=(18, 10), tight_layout=False)
-    plt.subplots_adjust(wspace=1 / list_length)
 
-    # loop through the data sets and build the charts
-    for count, data_set in enumerate(data_list):
-
-        # update our color mapt with new values
-        for num, value in enumerate(np.unique(data_set.index)):
-            if value not in cdict:
-                cdict[value] = next(color_cycle)
-
-        # build the wedges
-        wedges, texts = axs[count].pie(data_set,
-                                       colors=[cdict[v] for v in data_set.index])
-
-        # build the legend
-        axs[count].legend(wedges, data_set.index,
-                          title="Flags",
-                          loc="center left",
-                          bbox_to_anchor=(1, 0, 0.5, 1))
-        # set the title
-        axs[count].set_title(labels[count])
-
-    return axs
+def imbalnce_features(df,feature):
+    vc = df[feature].value_counts()
+    m = max(vc)
+    s = sum(vc)
+    if m/s > 0.95:
+        return True
+    return False
