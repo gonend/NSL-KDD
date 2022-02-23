@@ -8,9 +8,11 @@ import itertools
 from sklearn.model_selection import train_test_split
 import os
 import matplotlib.pyplot as plt
+
 # from Comparison_Detection import RANDOM_SEED
 # from scipy.stats import zscore
-# import seaborn as sb
+import seaborn as sb
+import matplotlib.pyplot as mp
 
 TARGET = 'attack_flag'
 
@@ -25,6 +27,8 @@ discretizes the target class into 5.
 3: privilege attack
 4: access attack
 """
+
+
 def target_bins(attack):
     # categorize the attacks
 
@@ -54,8 +58,8 @@ def target_bins(attack):
     return attack_type
 
 
-def read_and_preprocess_kdd(plots:bool=False):
-    #file_path_20_percent = 'data/KDDTrain+_20Percent.txt'
+def read_and_preprocess_kdd(plots: bool = False):
+    # file_path_20_percent = 'data/KDDTrain+_20Percent.txt'
     file_path_full_training_set = 'data/KDDTrain+.txt'
     file_path_test = 'data/KDDTest+.txt'
 
@@ -217,7 +221,10 @@ def read_and_preprocess_kdd(plots:bool=False):
         df = df.astype('float32')
         test_df = test_df.astype('float32')
 
-        print(df.info())
+
+
+
+        # print(df.info())
 
         df.to_csv("data/kdd_after_preprocess_train.csv")
         test_df.to_csv("data/kdd_after_preprocess_test.csv")
@@ -228,23 +235,28 @@ def read_and_preprocess_kdd(plots:bool=False):
         test_df = pd.read_csv("data/kdd_after_preprocess_test.csv")
         test_df = test_df.drop("Unnamed: 0", axis=1)
 
-
         df = df.astype('float32')
         test_df = test_df.astype(('float32'))
         if plots:
             # print feature distribution and if it greater then 0.95
             for col in df.columns:
-                feature_plot(df, col, 'Train')
+                # feature_plot(df, col, 'Train')
                 to_del = imbalnce_features(df, col)
                 if to_del:
                     del df[col]
                     del test_df[col]
-                feature_plot(test_df,TARGET,'Test')
+                # feature_plot(test_df, TARGET, 'Test')
+
+    df.corr(method='pearson')
+    dataplot = sb.heatmap(df.corr())
+    dataplot
+    mp.show()
+
     return df, test_df
 
 
 def print_class_freq(df):
-    for i in range(0,5):
+    for i in range(0, 5):
         print(f"Class {i} frequency: ")
         print(df[df[TARGET] == i].shape[0])
 
@@ -261,7 +273,6 @@ def balanced_train_data(df_train):
     return df_train
 
 
-
 def calculating_class_weights(y_true):
     from sklearn.utils.class_weight import compute_class_weight
     # number_dim = np.shape(y_true)[1]
@@ -270,31 +281,30 @@ def calculating_class_weights(y_true):
     # weights =  dict(zip(np.unique(train_classes), class_weights))
     return weights
 
-def feature_plot(df,feature,title):
-     fig, ax = plt.subplots(figsize=(16, 10))
-     #vc = df[feature].value_counts()
-     #bins = list(range(0,len((set(vc)))))
 
-     ax.hist(df[feature],density=False,bins=20, ec='black')
-     ax.set_title(f'{title}: {feature} Distribution',fontsize=15)
-        # ax.set_ylabel('Count', fontsize=12)
+def feature_plot(df, feature, title):
+    fig, ax = plt.subplots(figsize=(16, 10))
+    # vc = df[feature].value_counts()
+    # bins = list(range(0,len((set(vc)))))
 
-     fig.suptitle(title, fontsize=20)
-     for rect in ax.patches:
-         height = rect.get_height()
-         ax.annotate(f'{int(height)}', xy=(rect.get_x() + rect.get_width() / 2, height),
-                     xytext=(0, 5), textcoords='offset points', ha='center', va='bottom')
+    ax.hist(df[feature], density=False, bins=20, ec='black')
+    ax.set_title(f'{title}: {feature} Distribution', fontsize=15)
+    # ax.set_ylabel('Count', fontsize=12)
 
-     plt.show()
-     fig.savefig(f'plots/{feature}.png')
+    fig.suptitle(title, fontsize=20)
+    for rect in ax.patches:
+        height = rect.get_height()
+        ax.annotate(f'{int(height)}', xy=(rect.get_x() + rect.get_width() / 2, height),
+                    xytext=(0, 5), textcoords='offset points', ha='center', va='bottom')
+
+    plt.show()
+    fig.savefig(f'plots/{feature}.png')
 
 
-
-
-def imbalnce_features(df,feature):
+def imbalnce_features(df, feature):
     vc = df[feature].value_counts()
     m = max(vc)
     s = sum(vc)
-    if m/s > 0.95:
+    if m / s > 0.95:
         return True
     return False
