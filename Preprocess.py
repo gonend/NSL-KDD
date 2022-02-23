@@ -243,7 +243,8 @@ def calculating_class_weights(y_true):
     from sklearn.utils.class_weight import compute_class_weight
     # number_dim = np.shape(y_true)[1]
     # weights = np.empty([number_dim, 2])
-    weights = compute_class_weight(class_weight='balanced', classes=[0., 1., 2., 3., 4.], y=y_true)
+    # weights = compute_class_weight(class_weight='balanced', classes=[0., 1., 2., 3., 4.], y=y_true)
+    weights = compute_class_weight(class_weight='balanced', classes=[0., 1.], y=y_true)
     # weights =  dict(zip(np.unique(train_classes), class_weights))
     return weights
 
