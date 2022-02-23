@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import matplotlib.gridspec as gridspec
 from sklearn.preprocessing import LabelEncoder
 import seaborn as sns
 import itertools
@@ -230,13 +231,15 @@ def read_and_preprocess_kdd(plots:bool=False):
 
         df = df.astype('float32')
         test_df = test_df.astype(('float32'))
-        # print feature distribution and if it greater then 0.95
-        for col in df.columns:
-            to_del = imbalnce_features(df, col)
-            if to_del:
-                del df[col]
-            feature_plot(df, col)
-            feature_plot(test_df,TARGET)
+        if plots:
+            # print feature distribution and if it greater then 0.95
+            for col in df.columns:
+                feature_plot(df, col, 'Train')
+                to_del = imbalnce_features(df, col)
+                if to_del:
+                    del df[col]
+                    del test_df[col]
+                feature_plot(test_df,TARGET,'Test')
     return df, test_df
 
 
@@ -267,17 +270,25 @@ def calculating_class_weights(y_true):
     # weights =  dict(zip(np.unique(train_classes), class_weights))
     return weights
 
-def feature_plot(df,feature):
-    fig, ax = plt.subplots(figsize=(16, 10))
-    ax.hist(df[feature], density=False, bins=[0, 1, 2, 3, 4, 5], ec='black')
-    ax.set_title(f'Test Target Distribution')
-    for rect in ax.patches:
-        height = rect.get_height()
-        ax.annotate(f'{int(height)}', xy=(rect.get_x() + rect.get_width() / 2, height),
-                    xytext=(0, 5), textcoords='offset points', ha='center', va='bottom')
+def feature_plot(df,feature,title):
+     fig, ax = plt.subplots(figsize=(16, 10))
+     #vc = df[feature].value_counts()
+     #bins = list(range(0,len((set(vc)))))
 
-    plt.show()
-    fig.savefig(f'plots/{feature}.png')
+     ax.hist(df[feature],density=False,bins=20, ec='black')
+     ax.set_title(f'{title}: {feature} Distribution',fontsize=15)
+        # ax.set_ylabel('Count', fontsize=12)
+
+     fig.suptitle(title, fontsize=20)
+     for rect in ax.patches:
+         height = rect.get_height()
+         ax.annotate(f'{int(height)}', xy=(rect.get_x() + rect.get_width() / 2, height),
+                     xytext=(0, 5), textcoords='offset points', ha='center', va='bottom')
+
+     plt.show()
+     fig.savefig(f'plots/{feature}.png')
+
+
 
 
 def imbalnce_features(df,feature):
