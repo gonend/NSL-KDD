@@ -58,8 +58,8 @@ def target_bins(attack):
     return attack_type
 
 
-def read_and_preprocess_kdd(plots:bool=False, flag:bool=False):
-    #file_path_20_percent = 'data/KDDTrain+_20Percent.txt'
+def read_and_preprocess_kdd(plots: bool = False, flag: bool = False):
+    # file_path_20_percent = 'data/KDDTrain+_20Percent.txt'
     file_path_full_training_set = 'data/KDDTrain+.txt'
     file_path_test = 'data/KDDTest+.txt'
 
@@ -125,7 +125,6 @@ def read_and_preprocess_kdd(plots:bool=False, flag:bool=False):
         test_attack = test_df.attack.map(lambda a: 0 if a == 'normal' else 1)
         df['attack_flag'] = is_attack
         test_df['attack_flag'] = test_attack
-
 
         ## encode train_data
         le = LabelEncoder()
@@ -207,12 +206,12 @@ def read_and_preprocess_kdd(plots:bool=False, flag:bool=False):
         if plots:
             # print feature distribution and if it greater then 0.95
             for col in df.columns:
-                #feature_plot(df, col, 'Train')
+                # feature_plot(df, col, 'Train')
                 to_del = imbalnce_features(df, col)
                 if to_del:
                     del df[col]
                     del test_df[col]
-                #feature_plot(test_df,TARGET,'Test')
+                # feature_plot(test_df,TARGET,'Test')
 
     df.corr(method='pearson')
     dataplot = sb.heatmap(df.corr())
@@ -249,28 +248,26 @@ def calculating_class_weights(y_true):
     return weights
 
 
-def feature_plot(df,feature,title):
-     fig, ax = plt.subplots(figsize=(16, 10))
+def feature_plot(df, feature, title):
+    fig, ax = plt.subplots(figsize=(16, 10))
 
-     ax.hist(df[feature],density=False,bins=20, ec='black')
-     ax.set_title(f'{title}: {feature} Distribution',fontsize=15)
+    ax.hist(df[feature], density=False, bins=20, ec='black')
+    ax.set_title(f'{title}: {feature} Distribution', fontsize=15)
 
-     fig.suptitle(title, fontsize=20)
-     for rect in ax.patches:
-         height = rect.get_height()
-         ax.annotate(f'{int(height)}', xy=(rect.get_x() + rect.get_width() / 2, height),
-                     xytext=(0, 5), textcoords='offset points', ha='center', va='bottom')
+    fig.suptitle(title, fontsize=20)
+    for rect in ax.patches:
+        height = rect.get_height()
+        ax.annotate(f'{int(height)}', xy=(rect.get_x() + rect.get_width() / 2, height),
+                    xytext=(0, 5), textcoords='offset points', ha='center', va='bottom')
 
-     plt.show()
-     fig.savefig(f'plots/{feature}.png')
-
-
+    plt.show()
+    fig.savefig(f'plots/{feature}.png')
 
 
-def imbalnce_features(df,feature):
+def imbalnce_features(df, feature):
     vc = df[feature].value_counts()
     m = max(vc)
     s = sum(vc)
-    if m/s > 0.95:
+    if m / s > 0.95:
         return True
     return False
