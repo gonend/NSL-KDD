@@ -160,6 +160,7 @@ def read_and_preprocess_kdd():
         del df["attack"]
         del test_df["attack"]
 
+        # detele from shap
         del df['duration']
         del test_df['duration']
         del df['land']
