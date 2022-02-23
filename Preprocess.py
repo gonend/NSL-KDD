@@ -54,7 +54,7 @@ def target_bins(attack):
     return attack_type
 
 
-def read_and_preprocess_kdd(plots:bool=False):
+def read_and_preprocess_kdd(plots:bool=False, flag:bool=False):
     #file_path_20_percent = 'data/KDDTrain+_20Percent.txt'
     file_path_full_training_set = 'data/KDDTrain+.txt'
     file_path_test = 'data/KDDTest+.txt'
@@ -111,16 +111,17 @@ def read_and_preprocess_kdd(plots:bool=False):
         df.columns = columns
         test_df.columns = columns
 
-        # set target variabels into new classes
-        is_attack = df.attack.apply(target_bins)
+        # # set target variabels into new classes-> multi class classification
+        # is_attack = df.attack.apply(target_bins)
+        #
+        # test_attack = test_df.attack.apply(target_bins)
+        # binary classification
 
-        test_attack = test_df.attack.apply(target_bins)
-
-        # data_with_attack = df.join(is_attack, rsuffix='_flag')
+        is_attack = df.attack.map(lambda a: 0 if a == 'normal' else 1)
+        test_attack = test_df.attack.map(lambda a: 0 if a == 'normal' else 1)
         df['attack_flag'] = is_attack
         test_df['attack_flag'] = test_attack
 
-        # print(df.info(verbose=True))
 
         ## encode train_data
         le = LabelEncoder()
@@ -130,37 +131,6 @@ def read_and_preprocess_kdd(plots:bool=False):
         test_df['service'] = le.transform(test_df['service'])
         df['flag'] = le.fit_transform(df['flag'])
         test_df['flag'] = le.transform(test_df['flag'])
-
-        # le = LabelEncoder()
-        # le.fit(df['attack'])
-        # df['attack'] = le.transform(df['attack'])
-
-        # get the intial set of encoded features and encode them
-        # features_to_encode = ['protocol_type', 'service', 'flag']
-        # encoded = pd.get_dummies(df[features_to_encode])
-        # test_encoded_base = pd.get_dummies(test_df[features_to_encode])
-
-        # not all of the features are in the test set, so we need to account for diffs
-        # test_index = np.arange(len(test_df.index))
-        # column_diffs = list(set(encoded.columns.values) - set(test_encoded_base.columns.values))
-        #
-        # diff_df = pd.DataFrame(0, index=test_index, columns=column_diffs)
-        #
-        # # we'll also need to reorder the columns to match, so let's get those
-        # column_order = encoded.columns.to_list()
-        #
-        # # append the new columns
-        # test_encoded_temp = test_encoded_base.join(diff_df)
-        #
-        # # reorder the columns
-        # test_final = test_encoded_temp[column_order].fillna(0)
-
-        # get numeric features, we won't worry about encoding these at this point
-        # numeric_features = ['duration', 'src_bytes', 'dst_bytes']
-        #
-        # # model to fit/test
-        # to_fit = encoded.join(df[numeric_features])
-        # test_set = test_final.join(test_df[numeric_features])
 
         # delete data leakage
         del df["attack"]
@@ -228,18 +198,15 @@ def read_and_preprocess_kdd(plots:bool=False):
         test_df = pd.read_csv("data/kdd_after_preprocess_test.csv")
         test_df = test_df.drop("Unnamed: 0", axis=1)
 
-
-        df = df.astype('float32')
-        test_df = test_df.astype(('float32'))
         if plots:
             # print feature distribution and if it greater then 0.95
             for col in df.columns:
-                feature_plot(df, col, 'Train')
+                #feature_plot(df, col, 'Train')
                 to_del = imbalnce_features(df, col)
                 if to_del:
                     del df[col]
                     del test_df[col]
-                feature_plot(test_df,TARGET,'Test')
+                #feature_plot(test_df,TARGET,'Test')
     return df, test_df
 
 
@@ -266,18 +233,16 @@ def calculating_class_weights(y_true):
     from sklearn.utils.class_weight import compute_class_weight
     # number_dim = np.shape(y_true)[1]
     # weights = np.empty([number_dim, 2])
-    weights = compute_class_weight(class_weight='balanced', classes=[0., 1., 2., 3., 4.], y=y_true)
+    weights = compute_class_weight(class_weight='balanced', classes=[0., 1.], y=y_true) #, 2., 3., 4.
     # weights =  dict(zip(np.unique(train_classes), class_weights))
     return weights
 
+
 def feature_plot(df,feature,title):
      fig, ax = plt.subplots(figsize=(16, 10))
-     #vc = df[feature].value_counts()
-     #bins = list(range(0,len((set(vc)))))
 
      ax.hist(df[feature],density=False,bins=20, ec='black')
      ax.set_title(f'{title}: {feature} Distribution',fontsize=15)
-        # ax.set_ylabel('Count', fontsize=12)
 
      fig.suptitle(title, fontsize=20)
      for rect in ax.patches:
