@@ -33,6 +33,7 @@ def evaluate(model, X_train, y_train, X_test, y_test):
     cm = confusion_matrix(y_test, y_pred)
     disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=model.classes_)
     disp.plot()
+    disp.ax_.set_title(model.__class__.__name__, fontsize=15)
     plt.show()
 
 
@@ -40,21 +41,27 @@ def run_models(grid_search=False, shap_flag=True, train=None, test=None):
     X_train, y_train = train.iloc[:, :-1], train[TARGET]
     X_test, y_test = test.iloc[:, :-1], test[TARGET]
 
+    # # embedding
+    # extract = Preprocess.embedding(X_train)
+    # X_train = extract.predict(X_train)
+    # X_test = extract.predict(X_test)
+
     class_weights = Preprocess.calculating_class_weights(y_train)
     class_weights = {0: class_weights[0],
                      1: class_weights[1]}  # , 2: class_weights[2], 3: class_weights[3], 4: class_weights[4]
 
     DT = DecisionTreeClassifier()
-    RF = RandomForestClassifier(class_weight=class_weights, max_depth=3)  # , criterion='entropy', min_samples_split=20)
-    RoF = RotationForestClassifier(class_weight=class_weights,
-                                   max_depth=3)  # , criterion='entropy', min_samples_split=20)
+    # RF = RandomForestClassifier(class_weight=class_weights, max_depth=5)  # , criterion='entropy', min_samples_split=20)
+    RF = RandomForestClassifier(max_depth=5)  # , criterion='entropy', min_samples_split=20)
+    # RoF = RotationForestClassifier(class_weight=class_weights, max_depth=3)  # , criterion='entropy', min_samples_split=20)
+    RoF = RotationForestClassifier(max_depth=3)  # , criterion='entropy', min_samples_split=20)
     LR = LogisticRegression()
     xgb = XGBClassifier()
     Adb = AdaBoostClassifier()
     Knn = KNeighborsClassifier(n_neighbors=3)
     # RoF = RotationForestClassifier(class_weight=class_weights, min_samples_split=5) #, criterion='entropy')
     # RF = RandomForestClassifier(class_weight=class_weights, min_samples_split=5) #, criterion='entropy')
-    models = [DT, RF, RoF, Adb]
+    models = [DT, RF, RoF, Adb]  #, xgb]
 
     if not grid_search:
         print("Models Without Parameter Tuning")

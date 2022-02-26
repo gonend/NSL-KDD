@@ -1,7 +1,8 @@
+import keras as keras
 import pandas as pd
 import numpy as np
 import matplotlib.gridspec as gridspec
-from sklearn.preprocessing import LabelEncoder
+from sklearn.preprocessing import LabelEncoder, MinMaxScaler
 import seaborn as sns
 import itertools
 # import joblib
@@ -13,6 +14,10 @@ import matplotlib.pyplot as plt
 # from scipy.stats import zscore
 import seaborn as sb
 import matplotlib.pyplot as mp
+from scipy import stats
+from keras.layers import Dense
+from keras.callbacks import EarlyStopping
+from keras import Model
 
 TARGET = 'attack_flag'
 
@@ -128,16 +133,134 @@ def read_and_preprocess_kdd(plots: bool = False, flag: bool = False):
 
         ## encode train_data
         le = LabelEncoder()
-        df['protocol_type'] = le.fit_transform(df['protocol_type'])
-        test_df['protocol_type'] = le.transform(test_df['protocol_type'])
-        df['service'] = le.fit_transform(df['service'])
-        test_df['service'] = le.transform(test_df['service'])
-        df['flag'] = le.fit_transform(df['flag'])
-        test_df['flag'] = le.transform(test_df['flag'])
+        cols_to_label_encode = ['protocol_type', 'service', 'flag']
+        for col in cols_to_label_encode:
+            df[col] = le.fit_transform(df[col])
+            test_df[col] = le.fit_transform(test_df[col])
+
+        # df['protocol_type'] = le.fit_transform(df['protocol_type'])
+        # test_df['protocol_type'] = le.transform(test_df['protocol_type'])
+        # df['service'] = le.fit_transform(df['service'])
+        # test_df['service'] = le.transform(test_df['service'])
+        # df['flag'] = le.fit_transform(df['flag'])
+        # test_df['flag'] = le.transform(test_df['flag'])
 
         # delete data leakage
         del df["attack"]
         del test_df["attack"]
+
+        # SAME VAL
+        for col in df.columns:
+            # feature_plot(df, col, 'Train')
+            to_del = imbalance_features(df, col)
+            if to_del:
+                print(col)
+                del df[col]
+                del test_df[col]  # TODO: check wich one
+
+        # corrdict = {col: [] for col in df.columns}
+        # for i in range(len(df.columns)):
+        #     # for col2 in df.columns:
+        #     if i < len(df.columns) - 1:
+        #         if df[df.columns[i]].corr(df[df.columns[i + 1]]) > 0.85:
+        #             # if col1 not in corrdict.values():
+        #             # if col2 not in corrdict[col1] and col1 not in corrdict[col2]:
+        #             # print(df[df.columns[i]].name)
+        #             corrdict[df[df.columns[i]].name] = corrdict[df[df.columns[i]].name] + [df[df.columns[i + 1]].name]
+        #             # if col2 not in corrdict.values():
+        #             # if col1 not in corrdict[col2]:
+        #             #     corrdict[col2] = corrdict[col2] + [col1]
+        # res = {col: corrdict[col] for col in df.columns if corrdict[col] != []}
+        # # print(res)
+        # s = []
+        # for c in res.keys():
+        #     s.append(set([c, *res[c]]))
+        #     # print((c, *res[c]))
+        # for i in s:
+        #     print(i)
+
+        # # delete for correlation
+        # # del df['num_compromised']
+        # # del test_df['num_compromised']
+        # # del df['num_root']
+        # # del test_df['num_root']
+        del df['dst_host_srv_serror_rate']
+        del test_df['dst_host_srv_serror_rate']
+        del df['srv_serror_rate']
+        del test_df['srv_serror_rate']
+        # del df['dst_host_serror_rate']
+        # del test_df['dst_host_serror_rate']
+        del df['dst_host_srv_rerror_rate']
+        del test_df['dst_host_srv_rerror_rate']
+        del df['srv_rerror_rate']
+        del test_df['srv_rerror_rate']
+        del df['dst_host_same_srv_rate']
+        del test_df['dst_host_same_srv_rate']
+
+
+        # delete for same-diff
+        del df['srv_count']
+        del test_df['srv_count']
+        del df['diff_srv_rate']
+        del test_df['diff_srv_rate']
+        # del df['dst_host_same_srv_rate']
+        # del test_df['dst_host_same_srv_rate']
+        del df['dst_host_srv_diff_host_rate']
+        del test_df['dst_host_srv_diff_host_rate']
+
+        # print(len(set(df['level'])))
+        # print("---")
+        # print(set(df['level']))
+        # print("---")
+        # print(df['level'])
+        # print("---")
+
+        # c = 0
+        # for i in range(len(df["dst_host_same_src_port_rate"])):
+        #     if df['dst_host_same_src_port_rate'][i] != df['dst_host_srv_diff_host_rate'][i]:
+        #         c += 1
+        # print(c)
+
+        # c0 = 0
+        # c1 = 0
+        # c2 = 0
+        # for i in df["logged_in"]:
+        #     if i == 0:
+        #         c0 += 1
+        #     elif i == 1:
+        #         c1 += 1
+        #     else:
+        #         c2 += 1
+        # print(c0)
+        # print(c1)
+        # print(c2)
+
+
+        # cols_to_zscore = [col for col in df.columns if col not in cols_to_label_encode]
+        ## 'src_bytes', 'dst_bytes', 'count', 'dst_host_count', 'dst_host_srv_count', 'level' - לנרמל
+        ## אפשר למחוק srv_count כי זה חצי מ count
+        ## אפשר למחוק diff_srv_rate כי הפוך מ same_srv_rate
+        ## אפשר למחוק dst_host_same_srv_rate כי הפוך מ dst_host_same_srv_rate
+        ## אפשר למחוק dst_host_srv_diff_host_rate כי הפוך מ dst_host_same_src_port_rate
+        ## 'serror_rate' between 0-1
+        ## 'rerror_rate' between 0-1
+        ## 'same_srv_rate' between 0-1
+        ## 'srv_diff_host_rate' between 0-1
+        ## 'dst_host_same_srv_rate' between 0-1
+        ## 'dst_host_same_src_port_rate' between 0-1
+        ## 'dst_host_rerror_rate' between 0-1
+
+        cols_to_min_max_normalization = ['src_bytes', 'dst_bytes', 'count', 'dst_host_count', 'dst_host_srv_count', 'level']
+        min_max_scaler = MinMaxScaler()
+        for col in cols_to_min_max_normalization:
+            df[[col]] = min_max_scaler.fit_transform(df[[col]])
+            test_df[[col]] = min_max_scaler.fit_transform(test_df[[col]])
+            # stats.zscore(df[col])
+            # stats.zscore(test_df[col])
+
+        # for col in cols_to_zscore:
+        #     stats.zscore(df[col])
+        #     stats.zscore(test_df[col])
 
         # # detele from shap
         # del df['duration']
@@ -187,13 +310,14 @@ def read_and_preprocess_kdd(plots: bool = False, flag: bool = False):
         # # del df['attack']
         # # del test_df['attack']
 
-        df = df.astype('float32')
-        test_df = test_df.astype('float32')
+        # df = df.astype('float32')
+        # test_df = test_df.astype('float32')
 
-        print(df.info())
+        # print(df.info())
 
         df.to_csv("data/kdd_after_preprocess_train.csv")
         test_df.to_csv("data/kdd_after_preprocess_test.csv")
+
     else:
         df = pd.read_csv("data/kdd_after_preprocess_train.csv")
         df = df.drop("Unnamed: 0", axis=1)
@@ -207,16 +331,46 @@ def read_and_preprocess_kdd(plots: bool = False, flag: bool = False):
             # print feature distribution and if it greater then 0.95
             for col in df.columns:
                 # feature_plot(df, col, 'Train')
-                to_del = imbalnce_features(df, col)
+                to_del = imbalance_features(df, col)
                 if to_del:
                     del df[col]
                     del test_df[col]
                 # feature_plot(test_df,TARGET,'Test')
 
-    df.corr(method='pearson')
-    dataplot = sb.heatmap(df.corr())
-    dataplot
-    mp.show()
+    # df.corr(method='pearson')
+    # dataplot = sb.heatmap(df.corr())
+    # corrdict = {col: [] for col in df.columns}
+    # for col1 in df.columns:
+    #     for col2 in df.columns:
+    #         if col1 != col2 and df[col1].corr(df[col2]) > 0.95:
+    #             # if col1 not in corrdict.values():
+    #             if col2 not in corrdict[col1] and col1 not in corrdict[col2]:
+    #                 corrdict[col1] = corrdict[col1] + [col2]
+    #             # if col2 not in corrdict.values():
+    #             # if col1 not in corrdict[col2]:
+    #             #     corrdict[col2] = corrdict[col2] + [col1]
+    # res = {col: corrdict[col] for col in df.columns if corrdict[col] != []}
+    # s = []
+    # for c in res.keys():
+    #     s.append(set([c, *res[c]]))
+    #     # print((c, *res[c]))
+    # for i in s:
+    #     print(i)
+    #             # print(col1, col2, df[col1].corr(df[col2]))
+    # mp.show()
+
+    # print(df['num_compromised'])
+    # print(df['num_root'])
+    # print('-'*20)
+    # # print(df['dst_host_srv_serror_rate'])
+    # # print(df['srv_serror_rate'])
+    # print(df['serror_rate'])
+    # # print(df['dst_host_serror_rate'])
+    # print('-'*20)
+    # print(df['rerror_rate'])
+    # print(df['dst_host_srv_rerror_rate'])
+    # print(df['srv_rerror_rate'])
+    # print('-'*20)
 
     return df, test_df
 
@@ -265,10 +419,40 @@ def feature_plot(df, feature, title):
     fig.savefig(f'plots/{feature}.png')
 
 
-def imbalnce_features(df, feature):
+def imbalance_features(df, feature):
     vc = df[feature].value_counts()
     m = max(vc)
     s = sum(vc)
     if m / s > 0.95:
         return True
     return False
+
+
+def embedding(x_train):
+    model = keras.Sequential()
+    model.add(Dense(64, activation='relu'))
+    model.add(Dense(128, input_dim=64, activation='relu'))
+    model.add(Dense(16, input_dim=128, activation='relu', name="layer4"))
+    model.add(Dense(128, input_dim=64, activation='relu'))
+    model.add(Dense(x_train.shape[1], activation='sigmoid'))
+    # Compile model
+    model.compile(optimizer='adam', loss='mean_absolute_error')
+
+    # class_weights = calculating_class_weights(y_train)
+    # class_weights = {0: class_weights[0], 1: class_weights[1]}
+    early_stopping_monitor = EarlyStopping(monitor='loss', restore_best_weights=True, patience=7)
+
+    # if (os.path.isfile(data_path + "/models/EMBD_" + dataset_name + str(RANDOM_SEED) + ".h5") == False):
+    model.fit(x_train, x_train,
+              verbose=1,
+              epochs=80,
+              batch_size=10,
+              # validation_data=(x_val, x_val),
+              callbacks=[early_stopping_monitor])
+
+    # model.save(data_path + "/models/EMBD_" + dataset_name + str(RANDOM_SEED) + ".h5")  # creates a HDF5 file
+    # else:
+    #     model = load_model(data_path + "/models/EMBD_" + dataset_name + str(RANDOM_SEED) + ".h5")
+
+    extract = Model(inputs=model.inputs, outputs=model.layers[-3].output)
+    return extract
