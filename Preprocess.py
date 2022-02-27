@@ -1,4 +1,4 @@
-# import keras as keras
+import keras as keras
 import pandas as pd
 import numpy as np
 import matplotlib.gridspec as gridspec
@@ -68,82 +68,80 @@ def read_and_preprocess_kdd(flag: bool = False):
     file_path_full_training_set = 'data/KDDTrain+.txt'
     file_path_test = 'data/KDDTest+.txt'
 
-    if (os.path.isfile("data/kdd_after_preprocess_test.csv") == False):
-        df = pd.read_csv(file_path_full_training_set)
-        # df = pd.read_csv(file_path_full_training_set)
-        test_df = pd.read_csv(file_path_test)
 
-        columns = (['duration'
-            , 'protocol_type'
-            , 'service'
-            , 'flag'
-            , 'src_bytes'
-            , 'dst_bytes'
-            , 'land'
-            , 'wrong_fragment'
-            , 'urgent'
-            , 'hot'
-            , 'num_failed_logins'
-            , 'logged_in'
-            , 'num_compromised'
-            , 'root_shell'
-            , 'su_attempted'
-            , 'num_root'
-            , 'num_file_creations'
-            , 'num_shells'
-            , 'num_access_files'
-            , 'num_outbound_cmds'
-            , 'is_host_login'
-            , 'is_guest_login'
-            , 'count'
-            , 'srv_count'
-            , 'serror_rate'
-            , 'srv_serror_rate'
-            , 'rerror_rate'
-            , 'srv_rerror_rate'
-            , 'same_srv_rate'
-            , 'diff_srv_rate'
-            , 'srv_diff_host_rate'
-            , 'dst_host_count'
-            , 'dst_host_srv_count'
-            , 'dst_host_same_srv_rate'
-            , 'dst_host_diff_srv_rate'
-            , 'dst_host_same_src_port_rate'
-            , 'dst_host_srv_diff_host_rate'
-            , 'dst_host_serror_rate'
-            , 'dst_host_srv_serror_rate'
-            , 'dst_host_rerror_rate'
-            , 'dst_host_srv_rerror_rate'
-            , 'attack'
-            , 'level'])
+    df = pd.read_csv(file_path_full_training_set)
+    # df = pd.read_csv(file_path_full_training_set)
+    test_df = pd.read_csv(file_path_test)
 
-        df.columns = columns
-        test_df.columns = columns
+    columns = (['duration'
+        , 'protocol_type'
+        , 'service'
+        , 'flag'
+        , 'src_bytes'
+        , 'dst_bytes'
+        , 'land'
+        , 'wrong_fragment'
+        , 'urgent'
+        , 'hot'
+        , 'num_failed_logins'
+        , 'logged_in'
+        , 'num_compromised'
+        , 'root_shell'
+        , 'su_attempted'
+        , 'num_root'
+        , 'num_file_creations'
+        , 'num_shells'
+        , 'num_access_files'
+        , 'num_outbound_cmds'
+        , 'is_host_login'
+        , 'is_guest_login'
+        , 'count'
+        , 'srv_count'
+        , 'serror_rate'
+        , 'srv_serror_rate'
+        , 'rerror_rate'
+        , 'srv_rerror_rate'
+        , 'same_srv_rate'
+        , 'diff_srv_rate'
+        , 'srv_diff_host_rate'
+        , 'dst_host_count'
+        , 'dst_host_srv_count'
+        , 'dst_host_same_srv_rate'
+        , 'dst_host_diff_srv_rate'
+        , 'dst_host_same_src_port_rate'
+        , 'dst_host_srv_diff_host_rate'
+        , 'dst_host_serror_rate'
+        , 'dst_host_srv_serror_rate'
+        , 'dst_host_rerror_rate'
+        , 'dst_host_srv_rerror_rate'
+        , 'attack'
+        , 'level'])
 
-        df.to_csv("data/kdd_after_preprocess_train.csv")
-        test_df.to_csv("data/kdd_after_preprocess_test.csv")
+    df.columns = columns
+    test_df.columns = columns
 
+    # df = pd.read_csv("data/kdd_after_preprocess_train.csv")
 
-    else:
+    # df = df.drop("Unnamed: 0", axis=1)
 
-        df = pd.read_csv("data/kdd_after_preprocess_train.csv")
+    # test_df = pd.read_csv("data/kdd_after_preprocess_test.csv")
 
-        df = df.drop("Unnamed: 0", axis=1)
+    # test_df = test_df.drop("Unnamed: 0", axis=1)
 
-        test_df = pd.read_csv("data/kdd_after_preprocess_test.csv")
-
-        test_df = test_df.drop("Unnamed: 0", axis=1)
-
-        # # set target variabels into new classes-> multi class classification
-        # is_attack = df.attack.apply(target_bins)
-        #
-        # test_attack = test_df.attack.apply(target_bins)
-        # binary classification
+    # # set target variabels into new classes-> multi class classification
+    # is_attack = df.attack.apply(target_bins)
+    #
+    # test_attack = test_df.attack.apply(target_bins)
+    # binary classification
 
     is_attack = df.attack.map(lambda a: 0 if a == 'normal' else 1)
     test_attack = test_df.attack.map(lambda a: 0 if a == 'normal' else 1)
     df['attack_flag'] = is_attack
     test_df['attack_flag'] = test_attack
+
+    # delete data leakage
+    del df["attack"]
+    del test_df["attack"]
 
         ## encode train_data
     le = LabelEncoder()
@@ -159,10 +157,6 @@ def read_and_preprocess_kdd(flag: bool = False):
         # df['flag'] = le.fit_transform(df['flag'])
         # test_df['flag'] = le.transform(test_df['flag'])
 
-    # delete data leakage
-    del df["attack"]
-    del test_df["attack"]
-
     # SAME VAL
     for col in df.columns:
         # feature_plot(df, col, 'Train')
@@ -173,26 +167,30 @@ def read_and_preprocess_kdd(flag: bool = False):
             del test_df[col]
         # feature_plot(test_df,TARGET,'Test')
 
-        # corrdict = {col: [] for col in df.columns}
-        # for i in range(len(df.columns)):
-        #     # for col2 in df.columns:
-        #     if i < len(df.columns) - 1:
-        #         if df[df.columns[i]].corr(df[df.columns[i + 1]]) > 0.85:
-        #             # if col1 not in corrdict.values():
-        #             # if col2 not in corrdict[col1] and col1 not in corrdict[col2]:
-        #             # print(df[df.columns[i]].name)
-        #             corrdict[df[df.columns[i]].name] = corrdict[df[df.columns[i]].name] + [df[df.columns[i + 1]].name]
-        #             # if col2 not in corrdict.values():
-        #             # if col1 not in corrdict[col2]:
-        #             #     corrdict[col2] = corrdict[col2] + [col1]
-        # res = {col: corrdict[col] for col in df.columns if corrdict[col] != []}
-        # # print(res)
-        # s = []
-        # for c in res.keys():
-        #     s.append(set([c, *res[c]]))
-        #     # print((c, *res[c]))
-        # for i in s:
-        #     print(i)
+    df.corr(method='pearson')
+    dataplot = sb.heatmap(df.corr())
+    mp.show()
+
+    corrdict = {col: [] for col in df.columns}
+    for i in range(len(df.columns)):
+        # for col2 in df.columns:
+        if i < len(df.columns) - 1:
+            if df[df.columns[i]].corr(df[df.columns[i + 1]]) > 0.85:
+                # if col1 not in corrdict.values():
+                # if col2 not in corrdict[col1] and col1 not in corrdict[col2]:
+                # print(df[df.columns[i]].name)
+                corrdict[df[df.columns[i]].name] = corrdict[df[df.columns[i]].name] + [df[df.columns[i + 1]].name]
+                # if col2 not in corrdict.values():
+                # if col1 not in corrdict[col2]:
+                #     corrdict[col2] = corrdict[col2] + [col1]
+    res = {col: corrdict[col] for col in df.columns if corrdict[col] != []}
+    # print(res)
+    s = []
+    for c in res.keys():
+        s.append(set([c, *res[c]]))
+        # print((c, *res[c]))
+    for i in s:
+        print(i)
 
         # # delete for correlation
         # # del df['num_compromised']
@@ -266,6 +264,7 @@ def read_and_preprocess_kdd(flag: bool = False):
         ## 'dst_host_rerror_rate' between 0-1
 
     cols_to_min_max_normalization = ['src_bytes', 'dst_bytes', 'count', 'dst_host_count', 'dst_host_srv_count', 'level']
+    # 'protocol_type', 'service', 'flag'
     min_max_scaler = MinMaxScaler()
     for col in cols_to_min_max_normalization:
         df[[col]] = min_max_scaler.fit_transform(df[[col]])
@@ -277,6 +276,70 @@ def read_and_preprocess_kdd(flag: bool = False):
         #     stats.zscore(df[col])
         #     stats.zscore(test_df[col])
 
+        # # detele from shap
+        # del df['duration']
+        # del test_df['duration']
+        # del df['land']
+        # del test_df['land']
+        # del df['wrong_fragment']
+        # del test_df['wrong_fragment']
+        # del df['urgent']
+        # del test_df['urgent']
+        # del df['hot']
+        # del test_df['hot']
+        # del df['num_failed_logins']
+        # del test_df['num_failed_logins']
+        # del df['num_compromised']
+        # del test_df['num_compromised']
+        # del df['root_shell']
+        # del test_df['root_shell']
+        # del df['su_attempted']
+        # del test_df['su_attempted']
+        # del df['num_root']
+        # del test_df['num_root']
+        # del df['num_file_creations']
+        # del test_df['num_file_creations']
+        # del df['num_shells']
+        # del test_df['num_shells']
+        # del df['num_access_files']
+        # del test_df['num_access_files']
+        # del df['num_outbound_cmds']
+        # del test_df['num_outbound_cmds']
+        # del df['is_host_login']
+        # del test_df['is_host_login']
+        # del df['is_guest_login']
+        # del test_df['is_guest_login']
+        # del df['srv_count']
+        # del test_df['srv_count']
+        # del df['srv_serror_rate']
+        # del test_df['srv_serror_rate']
+        # del df['srv_diff_host_rate']
+        # del test_df['srv_diff_host_rate']
+        # del df['dst_host_count']
+        # del test_df['dst_host_count']
+        # del df['dst_host_srv_serror_rate']
+        # del test_df['dst_host_srv_serror_rate']
+        # del df['dst_host_rerror_rate']
+        # del test_df['dst_host_rerror_rate']
+        # # del df['attack']
+        # # del test_df['attack']
+
+        # df = df.astype('float32')
+        # test_df = test_df.astype('float32')
+
+        # print(df.info())
+
+        # df = df.astype('float32')
+        # test_df = test_df.astype(('float32'))
+    if flag:
+        # print feature distribution and if it greater then 0.95
+        for col in df.columns:
+            # feature_plot(df, col, 'Train')
+            to_del = imbalance_features(df, col)
+            if to_del:
+                del df[col]
+                del test_df[col]
+            # feature_plot(test_df,TARGET,'Test')
 
     # df.corr(method='pearson')
     # dataplot = sb.heatmap(df.corr())
@@ -312,6 +375,9 @@ def read_and_preprocess_kdd(flag: bool = False):
     # print(df['dst_host_srv_rerror_rate'])
     # print(df['srv_rerror_rate'])
     # print('-'*20)
+
+    df.to_csv("data/kdd_after_preprocess_train.csv")
+    test_df.to_csv("data/kdd_after_preprocess_test.csv")
 
     return df, test_df
 
@@ -369,31 +435,31 @@ def imbalance_features(df, feature):
     return False
 
 
-def embedding(x_train):
-    model = keras.Sequential()
-    model.add(Dense(64, activation='relu'))
-    model.add(Dense(128, input_dim=64, activation='relu'))
-    model.add(Dense(16, input_dim=128, activation='relu', name="layer4"))
-    model.add(Dense(128, input_dim=64, activation='relu'))
-    model.add(Dense(x_train.shape[1], activation='sigmoid'))
-    # Compile model
-    model.compile(optimizer='adam', loss='mean_absolute_error')
-
-    # class_weights = calculating_class_weights(y_train)
-    # class_weights = {0: class_weights[0], 1: class_weights[1]}
-    early_stopping_monitor = EarlyStopping(monitor='loss', restore_best_weights=True, patience=7)
-
-    # if (os.path.isfile(data_path + "/models/EMBD_" + dataset_name + str(RANDOM_SEED) + ".h5") == False):
-    model.fit(x_train, x_train,
-              verbose=1,
-              epochs=80,
-              batch_size=10,
-              # validation_data=(x_val, x_val),
-              callbacks=[early_stopping_monitor])
-
-    # model.save(data_path + "/models/EMBD_" + dataset_name + str(RANDOM_SEED) + ".h5")  # creates a HDF5 file
-    # else:
-    #     model = load_model(data_path + "/models/EMBD_" + dataset_name + str(RANDOM_SEED) + ".h5")
-
-    extract = Model(inputs=model.inputs, outputs=model.layers[-3].output)
-    return extract
+# def embedding(x_train):
+#     model = keras.Sequential()
+#     model.add(Dense(64, activation='relu'))
+#     model.add(Dense(128, input_dim=64, activation='relu'))
+#     model.add(Dense(16, input_dim=128, activation='relu', name="layer4"))
+#     model.add(Dense(128, input_dim=64, activation='relu'))
+#     model.add(Dense(x_train.shape[1], activation='sigmoid'))
+#     # Compile model
+#     model.compile(optimizer='adam', loss='mean_absolute_error')
+#
+#     # class_weights = calculating_class_weights(y_train)
+#     # class_weights = {0: class_weights[0], 1: class_weights[1]}
+#     early_stopping_monitor = EarlyStopping(monitor='loss', restore_best_weights=True, patience=7)
+#
+#     # if (os.path.isfile(data_path + "/models/EMBD_" + dataset_name + str(RANDOM_SEED) + ".h5") == False):
+#     model.fit(x_train, x_train,
+#               verbose=1,
+#               epochs=80,
+#               batch_size=10,
+#               # validation_data=(x_val, x_val),
+#               callbacks=[early_stopping_monitor])
+#
+#     # model.save(data_path + "/models/EMBD_" + dataset_name + str(RANDOM_SEED) + ".h5")  # creates a HDF5 file
+#     # else:
+#     #     model = load_model(data_path + "/models/EMBD_" + dataset_name + str(RANDOM_SEED) + ".h5")
+#
+#     extract = Model(inputs=model.inputs, outputs=model.layers[-3].output)
+#     return extract

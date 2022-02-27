@@ -1,3 +1,5 @@
+import os
+
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -11,7 +13,7 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.metrics import precision_recall_curve,f1_score, accuracy_score, confusion_matrix, ConfusionMatrixDisplay, \
     recall_score, precision_score
 from rotation_forest import RotationForestClassifier
-from xgboost import XGBClassifier
+# from xgboost import XGBClassifier
 
 from sklearn.model_selection import GridSearchCV
 
@@ -70,10 +72,16 @@ def run_models(tuning=False,strat=False ,shap_flag=True, train=None, test=None):
     if tuning:
         print("-" * 40 + "Runing models with improvments" + "-" * 40)
 
-        DT = DecisionTreeClassifier(max_depth=5,criterion='entropy', min_samples_split=20) #
-        RF = RandomForestClassifier(n_estimators=150,max_depth=7, criterion='gini', min_samples_split=15) #, max_features='sqrt'
-        RoF = RotationForestClassifier(n_estimators=50, max_depth=5, criterion='gini', min_samples_split=20)  # max_depth=3 , criterion='entropy', min_samples_split=20)
-        Adb = AdaBoostClassifier(n_estimators=100,learning_rate=1)
+        # DT = DecisionTreeClassifier(max_depth=5,criterion='entropy', min_samples_split=20) #
+        # RF = RandomForestClassifier(n_estimators=150,max_depth=7, criterion='gini', min_samples_split=15) #, max_features='sqrt'
+        # RoF = RotationForestClassifier(n_estimators=50, max_depth=5, criterion='gini', min_samples_split=20)  # max_depth=3 , criterion='entropy', min_samples_split=20)
+        # Adb = AdaBoostClassifier(n_estimators=100,learning_rate=1)
+
+        DT = DecisionTreeClassifier(max_depth=12, criterion='entropy', min_samples_split=20)  #
+        RF = RandomForestClassifier(n_estimators=120, max_depth=8, criterion='gini', min_samples_split=15)  #
+        RoF = RotationForestClassifier(n_estimators=50, max_depth=5, criterion='gini',
+                                       min_samples_split=20)  # max_depth=3 , criterion='entropy', min_samples_split=20)
+        Adb = AdaBoostClassifier(n_estimators=100, learning_rate=1)
 
         models = [DT, RF, RoF, Adb]  # , xgb]
         models_accuracy = {}
@@ -140,7 +148,13 @@ def run_models(tuning=False,strat=False ,shap_flag=True, train=None, test=None):
 
 if __name__ == '__main__':
     # X_train, x_val, X_test, y_train, y_val, y_test = Preprocess.load_kdd_data()
-    train, test = Preprocess.read_and_preprocess_kdd(flag=True)
+    if (os.path.isfile("data/kdd_after_preprocess_test.csv") == False):
+        train, test = Preprocess.read_and_preprocess_kdd(flag=True)
+    else:
+        train = pd.read_csv("data/kdd_after_preprocess_train.csv")
+        test = pd.read_csv("data/kdd_after_preprocess_test.csv")
+        train = train.drop("Unnamed: 0", axis=1)
+        test = test.drop("Unnamed: 0", axis=1)
     #run_models(tuning=False, shap_flag=False, train=train, test=test)
 
     print("-" * 40 + "Not Using StratifiedKFold" + "-" * 40)
