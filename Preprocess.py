@@ -1,4 +1,4 @@
-import keras as keras
+# import keras as keras
 import pandas as pd
 import numpy as np
 import matplotlib.gridspec as gridspec
@@ -15,9 +15,9 @@ import matplotlib.pyplot as plt
 import seaborn as sb
 import matplotlib.pyplot as mp
 from scipy import stats
-from keras.layers import Dense
-from keras.callbacks import EarlyStopping
-from keras import Model
+#from keras.layers import Dense
+#from keras.callbacks import EarlyStopping
+#from keras import Model
 
 TARGET = 'attack_flag'
 
@@ -63,7 +63,7 @@ def target_bins(attack):
     return attack_type
 
 
-def read_and_preprocess_kdd(plots: bool = False, flag: bool = False):
+def read_and_preprocess_kdd(flag: bool = False):
     # file_path_20_percent = 'data/KDDTrain+_20Percent.txt'
     file_path_full_training_set = 'data/KDDTrain+.txt'
     file_path_test = 'data/KDDTest+.txt'
@@ -120,23 +120,37 @@ def read_and_preprocess_kdd(plots: bool = False, flag: bool = False):
         df.columns = columns
         test_df.columns = columns
 
+        df.to_csv("data/kdd_after_preprocess_train.csv")
+        test_df.to_csv("data/kdd_after_preprocess_test.csv")
+
+
+    else:
+
+        df = pd.read_csv("data/kdd_after_preprocess_train.csv")
+
+        df = df.drop("Unnamed: 0", axis=1)
+
+        test_df = pd.read_csv("data/kdd_after_preprocess_test.csv")
+
+        test_df = test_df.drop("Unnamed: 0", axis=1)
+
         # # set target variabels into new classes-> multi class classification
         # is_attack = df.attack.apply(target_bins)
         #
         # test_attack = test_df.attack.apply(target_bins)
         # binary classification
 
-        is_attack = df.attack.map(lambda a: 0 if a == 'normal' else 1)
-        test_attack = test_df.attack.map(lambda a: 0 if a == 'normal' else 1)
-        df['attack_flag'] = is_attack
-        test_df['attack_flag'] = test_attack
+    is_attack = df.attack.map(lambda a: 0 if a == 'normal' else 1)
+    test_attack = test_df.attack.map(lambda a: 0 if a == 'normal' else 1)
+    df['attack_flag'] = is_attack
+    test_df['attack_flag'] = test_attack
 
         ## encode train_data
-        le = LabelEncoder()
-        cols_to_label_encode = ['protocol_type', 'service', 'flag']
-        for col in cols_to_label_encode:
-            df[col] = le.fit_transform(df[col])
-            test_df[col] = le.fit_transform(test_df[col])
+    le = LabelEncoder()
+    cols_to_label_encode = ['protocol_type', 'service', 'flag']
+    for col in cols_to_label_encode:
+        df[col] = le.fit_transform(df[col])
+        test_df[col] = le.fit_transform(test_df[col])
 
         # df['protocol_type'] = le.fit_transform(df['protocol_type'])
         # test_df['protocol_type'] = le.transform(test_df['protocol_type'])
@@ -145,18 +159,19 @@ def read_and_preprocess_kdd(plots: bool = False, flag: bool = False):
         # df['flag'] = le.fit_transform(df['flag'])
         # test_df['flag'] = le.transform(test_df['flag'])
 
-        # delete data leakage
-        del df["attack"]
-        del test_df["attack"]
+    # delete data leakage
+    del df["attack"]
+    del test_df["attack"]
 
-        # SAME VAL
-        for col in df.columns:
-            # feature_plot(df, col, 'Train')
-            to_del = imbalance_features(df, col)
-            if to_del:
-                print(col)
-                del df[col]
-                del test_df[col]  # TODO: check wich one
+    # SAME VAL
+    for col in df.columns:
+        # feature_plot(df, col, 'Train')
+        to_del = imbalance_features(df, col)
+        if to_del:
+            #print(col)
+            del df[col]
+            del test_df[col]
+        # feature_plot(test_df,TARGET,'Test')
 
         # corrdict = {col: [] for col in df.columns}
         # for i in range(len(df.columns)):
@@ -184,29 +199,29 @@ def read_and_preprocess_kdd(plots: bool = False, flag: bool = False):
         # # del test_df['num_compromised']
         # # del df['num_root']
         # # del test_df['num_root']
-        del df['dst_host_srv_serror_rate']
-        del test_df['dst_host_srv_serror_rate']
-        del df['srv_serror_rate']
-        del test_df['srv_serror_rate']
-        # del df['dst_host_serror_rate']
-        # del test_df['dst_host_serror_rate']
-        del df['dst_host_srv_rerror_rate']
-        del test_df['dst_host_srv_rerror_rate']
-        del df['srv_rerror_rate']
-        del test_df['srv_rerror_rate']
-        del df['dst_host_same_srv_rate']
-        del test_df['dst_host_same_srv_rate']
+    del df['dst_host_srv_serror_rate']
+    del test_df['dst_host_srv_serror_rate']
+    del df['srv_serror_rate']
+    del test_df['srv_serror_rate']
+    # del df['dst_host_serror_rate']
+    # del test_df['dst_host_serror_rate']
+    del df['dst_host_srv_rerror_rate']
+    del test_df['dst_host_srv_rerror_rate']
+    del df['srv_rerror_rate']
+    del test_df['srv_rerror_rate']
+    del df['dst_host_same_srv_rate']
+    del test_df['dst_host_same_srv_rate']
 
 
-        # delete for same-diff
-        del df['srv_count']
-        del test_df['srv_count']
-        del df['diff_srv_rate']
-        del test_df['diff_srv_rate']
-        # del df['dst_host_same_srv_rate']
-        # del test_df['dst_host_same_srv_rate']
-        del df['dst_host_srv_diff_host_rate']
-        del test_df['dst_host_srv_diff_host_rate']
+    # delete for same-diff
+    del df['srv_count']
+    del test_df['srv_count']
+    del df['diff_srv_rate']
+    del test_df['diff_srv_rate']
+    # del df['dst_host_same_srv_rate']
+    # del test_df['dst_host_same_srv_rate']
+    del df['dst_host_srv_diff_host_rate']
+    del test_df['dst_host_srv_diff_host_rate']
 
         # print(len(set(df['level'])))
         # print("---")
@@ -250,11 +265,11 @@ def read_and_preprocess_kdd(plots: bool = False, flag: bool = False):
         ## 'dst_host_same_src_port_rate' between 0-1
         ## 'dst_host_rerror_rate' between 0-1
 
-        cols_to_min_max_normalization = ['src_bytes', 'dst_bytes', 'count', 'dst_host_count', 'dst_host_srv_count', 'level']
-        min_max_scaler = MinMaxScaler()
-        for col in cols_to_min_max_normalization:
-            df[[col]] = min_max_scaler.fit_transform(df[[col]])
-            test_df[[col]] = min_max_scaler.fit_transform(test_df[[col]])
+    cols_to_min_max_normalization = ['src_bytes', 'dst_bytes', 'count', 'dst_host_count', 'dst_host_srv_count', 'level']
+    min_max_scaler = MinMaxScaler()
+    for col in cols_to_min_max_normalization:
+        df[[col]] = min_max_scaler.fit_transform(df[[col]])
+        test_df[[col]] = min_max_scaler.fit_transform(test_df[[col]])
             # stats.zscore(df[col])
             # stats.zscore(test_df[col])
 
@@ -262,80 +277,6 @@ def read_and_preprocess_kdd(plots: bool = False, flag: bool = False):
         #     stats.zscore(df[col])
         #     stats.zscore(test_df[col])
 
-        # # detele from shap
-        # del df['duration']
-        # del test_df['duration']
-        # del df['land']
-        # del test_df['land']
-        # del df['wrong_fragment']
-        # del test_df['wrong_fragment']
-        # del df['urgent']
-        # del test_df['urgent']
-        # del df['hot']
-        # del test_df['hot']
-        # del df['num_failed_logins']
-        # del test_df['num_failed_logins']
-        # del df['num_compromised']
-        # del test_df['num_compromised']
-        # del df['root_shell']
-        # del test_df['root_shell']
-        # del df['su_attempted']
-        # del test_df['su_attempted']
-        # del df['num_root']
-        # del test_df['num_root']
-        # del df['num_file_creations']
-        # del test_df['num_file_creations']
-        # del df['num_shells']
-        # del test_df['num_shells']
-        # del df['num_access_files']
-        # del test_df['num_access_files']
-        # del df['num_outbound_cmds']
-        # del test_df['num_outbound_cmds']
-        # del df['is_host_login']
-        # del test_df['is_host_login']
-        # del df['is_guest_login']
-        # del test_df['is_guest_login']
-        # del df['srv_count']
-        # del test_df['srv_count']
-        # del df['srv_serror_rate']
-        # del test_df['srv_serror_rate']
-        # del df['srv_diff_host_rate']
-        # del test_df['srv_diff_host_rate']
-        # del df['dst_host_count']
-        # del test_df['dst_host_count']
-        # del df['dst_host_srv_serror_rate']
-        # del test_df['dst_host_srv_serror_rate']
-        # del df['dst_host_rerror_rate']
-        # del test_df['dst_host_rerror_rate']
-        # # del df['attack']
-        # # del test_df['attack']
-
-        # df = df.astype('float32')
-        # test_df = test_df.astype('float32')
-
-        # print(df.info())
-
-        df.to_csv("data/kdd_after_preprocess_train.csv")
-        test_df.to_csv("data/kdd_after_preprocess_test.csv")
-
-    else:
-        df = pd.read_csv("data/kdd_after_preprocess_train.csv")
-        df = df.drop("Unnamed: 0", axis=1)
-
-        test_df = pd.read_csv("data/kdd_after_preprocess_test.csv")
-        test_df = test_df.drop("Unnamed: 0", axis=1)
-
-        # df = df.astype('float32')
-        # test_df = test_df.astype(('float32'))
-        if plots:
-            # print feature distribution and if it greater then 0.95
-            for col in df.columns:
-                # feature_plot(df, col, 'Train')
-                to_del = imbalance_features(df, col)
-                if to_del:
-                    del df[col]
-                    del test_df[col]
-                # feature_plot(test_df,TARGET,'Test')
 
     # df.corr(method='pearson')
     # dataplot = sb.heatmap(df.corr())
