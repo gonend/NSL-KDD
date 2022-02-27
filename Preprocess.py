@@ -120,6 +120,8 @@ def read_and_preprocess_kdd(flag: bool = False):
     df.columns = columns
     test_df.columns = columns
 
+    print(df.info())
+
     # df = pd.read_csv("data/kdd_after_preprocess_train.csv")
 
     # df = df.drop("Unnamed: 0", axis=1)
@@ -192,11 +194,11 @@ def read_and_preprocess_kdd(flag: bool = False):
     for i in s:
         print(i)
 
-        # # delete for correlation
-        # # del df['num_compromised']
-        # # del test_df['num_compromised']
-        # # del df['num_root']
-        # # del test_df['num_root']
+    # # delete for correlation
+    # # del df['num_compromised']
+    # # del test_df['num_compromised']
+    # # del df['num_root']
+    # # del test_df['num_root']
     del df['dst_host_srv_serror_rate']
     del test_df['dst_host_srv_serror_rate']
     del df['srv_serror_rate']
@@ -378,6 +380,8 @@ def read_and_preprocess_kdd(flag: bool = False):
 
     df.to_csv("data/kdd_after_preprocess_train.csv")
     test_df.to_csv("data/kdd_after_preprocess_test.csv")
+
+    print(df.info())
 
     return df, test_df
 
